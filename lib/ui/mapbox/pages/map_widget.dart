@@ -1,28 +1,40 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:mapbox_geocode/mapbox_geocode.dart';
+import 'package:mapbox_test/generated_assets/assets.gen.dart';
 import 'package:mapbox_test/token.dart';
 import 'package:easy_search_bar/easy_search_bar.dart';
+import 'package:mapbox_test/ui/mapbox/util/annotation_listener.dart';
+import 'package:mapbox_test/ui/mapbox/util/annotation_utils.dart';
+import 'package:mapbox_test/utils/route_utils.dart';
 import '../../../utils/location_utils.dart';
 
 class MapScreenWidget extends StatefulWidget {
+  const MapScreenWidget({super.key});
+
   @override
   State<MapScreenWidget> createState() => _MapScreenWidgetState();
 }
 
-class _MapScreenWidgetState extends State<MapScreenWidget> {
+class _MapScreenWidgetState extends State<MapScreenWidget>
+    with TickerProviderStateMixin {
   // ELIGIBLE FOR REUSE
   MapboxMap? mapboxMap;
   bool _userlocationTracking = false;
   Timer? _timer;
   PointAnnotationManager? pointAnnotationManager;
   CircleAnnotationManager? circleAnnotationManager;
+  RouteUtil? routeUtil;
+  final defaultEdgeInsets =
+      MbxEdgeInsets(top: 100, left: 100, bottom: 100, right: 100);
   // --->
-
+  PointAnnotation? _pinnedAnnotation;
   String searchValue = '';
   List<String> suggestions = [];
+  List<PointAnnotation> stops = [];
 
   @override
   void initState() {
@@ -79,6 +91,7 @@ class _MapScreenWidgetState extends State<MapScreenWidget> {
 
   void _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
+    routeUtil = RouteUtil.of(this);
     // set camera position and zoom
     mapboxMap.setCamera(CameraOptions(
       center: Point(
@@ -104,11 +117,23 @@ class _MapScreenWidgetState extends State<MapScreenWidget> {
         await mapboxMap.annotations.createPointAnnotationManager();
     circleAnnotationManager =
         await mapboxMap.annotations.createCircleAnnotationManager();
+    circleAnnotationManager?.addOnCircleAnnotationClickListener(
+      // CircleAnnotationListener((annotation) {
+      //   debugPrint('onCircleAnnotationClick: ${annotation.id}');
+      //   circleAnnotationManager?.delete(annotation);
+      //   _pinnedAnnotation = null;
+      // }),
+      DeleteCircleAnnotationListener(circleAnnotationManager!, onDeleted: (_) {
+        setState(() {
+          _pinnedAnnotation = null;
+        });
+      }),
+    );
   }
 
   void refreshTrackLocation() async {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(milliseconds: 500), (timer) async {
+    _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) async {
       if (!_userlocationTracking) {
         _timer?.cancel();
         return;
@@ -123,17 +148,17 @@ class _MapScreenWidgetState extends State<MapScreenWidget> {
 
   void _setCameraPosition(Position puckLocation) {
     mapboxMap?.flyTo(
-      CameraOptions(
-        center: Point(
-          coordinates: puckLocation,
-        ).toJson(),
-        zoom: 12,
-      ),
-      // animate the camera to the new position over a dynamic distance
-      MapAnimationOptions(
-        duration: 500,
-      ),
-    );
+        CameraOptions(
+          center: Point(
+            coordinates: puckLocation,
+          ).toJson(),
+          zoom: 15,
+        ),
+        // animate the camera to the new position over a dynamic distance
+        // MapAnimationOptions(
+        //   duration: 500,
+        // ),
+        null);
   }
 
   void _onScrollListener(ScreenCoordinate point) {
@@ -204,33 +229,32 @@ class _MapScreenWidgetState extends State<MapScreenWidget> {
     return Scaffold(
       appBar: _searchAppBar(),
       body: MapWidget(
-          resourceOptions: ResourceOptions(
-            accessToken: publicToken,
-            tileStoreUsageMode: TileStoreUsageMode.READ_AND_UPDATE,
-          ),
-          mapOptions: MapOptions(
-            pixelRatio: 1.0,
-            constrainMode: ConstrainMode.HEIGHT_ONLY,
-          ),
-          onMapCreated: _onMapCreated,
-          onScrollListener: _onScrollListener,
-          onTapListener: (coordinate) {
-            // pointAnnotationManager?.create(
-            //   PointAnnotationOptions(
-            //     geometry: coordinate.toPoint().toJson(),
-            //     iconImage: 'airport-15',
-            //     iconSize: 5,
-            //   ),
-            // );
-            circleAnnotationManager?.create(
-              CircleAnnotationOptions(
-                geometry: coordinate.toPoint().toJson(),
-                circleRadius: 10,
-                circleColor: Colors.orange.value,
-              ),
+        resourceOptions: ResourceOptions(
+          accessToken: publicToken,
+          tileStoreUsageMode: TileStoreUsageMode.READ_AND_UPDATE,
+        ),
+        onMapCreated: _onMapCreated,
+        onScrollListener: _onScrollListener,
+        onTapListener: (coordinate) async {
+          final anno = await pointAnnotationManager?.create(
+            PointAnnotationOptions(
+              geometry: coordinate.toPoint().toJson(),
+              image: (await rootBundle.load(Assets.images.bus.path))
+                  .buffer
+                  .asUint8List(),
+              iconSize: 1.5,
+            ),
+          );
+          stops.add(anno!);
+          if (stops.length > 1) {
+            routeUtil?.drawRouteFromStops(
+              stops.map((e) => e.toPosition()).toList(),
             );
-          }),
+          }
+        },
+      ),
       floatingActionButton: _fab(),
     );
   }
+
 }

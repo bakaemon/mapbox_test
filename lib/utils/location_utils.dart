@@ -25,7 +25,7 @@ class LocationUtils {
 
   static Future<geolocator.Position> getCurrentLocation() async {
     return await geolocator.Geolocator.getCurrentPosition(
-        desiredAccuracy: geolocator.LocationAccuracy.high);
+        desiredAccuracy: geolocator.LocationAccuracy.medium);
   }
 
   // static Future<LatLng> getCurrentLatLng() async {
@@ -94,11 +94,20 @@ class LocationUtils {
       distanceFilter: 10,
     ));
   }
+
+  static Future<mb.Position> getAddressMapboxPosition(String address) async {
+    final location = await locationFromAddress(address);
+    return location.first.toMapBoxPosition();
+  }
 }
 
 extension GeolocatorPositionExtension on geolocator.Position {
   mb.Position toMapBoxPluck() {
     return mb.Position(longitude, latitude, altitude);
+  }
+
+  mb.Position toMapBoxPosition() {
+    return mb.Position(latitude, longitude);
   }
 }
 
@@ -118,6 +127,15 @@ extension PuckPosition on StyleManager {
 extension ScreenCoordinateExtension on mb.ScreenCoordinate {
   mb.Point toPoint() {
     return mb.Point(coordinates: Position(y, x));
+  }
+  mb.Position toPosition() {
+    return mb.Position(y, x);
+  }
+}
+
+extension LocationGeolocatorUtil on Location {
+  mb.Position toMapBoxPosition() {
+    return mb.Position(latitude, longitude);
   }
 }
 // extension LatLngExtension on LatLng {

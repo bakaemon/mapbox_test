@@ -1,5 +1,4 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:mapbox_geocode/models/properties.dart';
 
 import 'geometry.dart';
 

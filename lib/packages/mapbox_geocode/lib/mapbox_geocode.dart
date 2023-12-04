@@ -1,6 +1,8 @@
 library mapbox_geocode;
 
 export 'src/search_api.dart';
+export 'src/navigation/driving_api.dart';
+export 'src/navigation/optimization.dart';
 export 'models/bbox.dart';
 export 'models/failure_response.dart';
 export 'models/location.dart';

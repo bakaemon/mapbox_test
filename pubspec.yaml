@@ -48,10 +48,12 @@ dependencies:
   geocoding: ^2.1.1
   geolocator: ^10.1.0
   mapbox_maps_flutter: ^0.5.0
+  turf: ^0.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -60,11 +62,26 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
   build_runner: ^2.3.3
+  flutter_gen_runner:
   freezed: ^2.4.1
   http: ^0.13.6
   json_serializable: ^6.6.2
 
+# flutter gen
+flutter_gen:
+  output: lib/generated_assets # Optional (default: lib/gen/)
+  line_length: 80 # Optional (default: 80)
 
+  # Optional
+  integrations:
+    flutter_svg: true
+    flare_flutter: true
+    rive: true
+    lottie: true
+
+  # colors:
+  #   inputs:
+  #     - assets/color/colors.xml
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -75,6 +92,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/images/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
