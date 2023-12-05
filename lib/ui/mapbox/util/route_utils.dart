@@ -5,7 +5,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:mapbox_geocode/mapbox_geocode.dart';
 import 'package:mapbox_test/token.dart';
-import 'package:mapbox_test/utils/location_utils.dart';
+import 'package:mapbox_test/ui/mapbox/util/location_utils.dart';
 import 'package:turf/polyline.dart';
 
 enum RouteType { line, animated }

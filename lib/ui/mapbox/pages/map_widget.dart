@@ -9,8 +9,8 @@ import 'package:mapbox_test/token.dart';
 import 'package:easy_search_bar/easy_search_bar.dart';
 import 'package:mapbox_test/ui/mapbox/util/annotation_listener.dart';
 import 'package:mapbox_test/ui/mapbox/util/annotation_utils.dart';
-import 'package:mapbox_test/utils/route_utils.dart';
-import '../../../utils/location_utils.dart';
+import 'package:mapbox_test/ui/mapbox/util/route_utils.dart';
+import '../util/location_utils.dart';
 
 class MapScreenWidget extends StatefulWidget {
   const MapScreenWidget({super.key});
