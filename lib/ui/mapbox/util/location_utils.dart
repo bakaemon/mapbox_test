@@ -112,6 +112,12 @@ extension GeolocatorPositionExtension on geolocator.Position {
   
 }
 
+extension MapBoxPositionExtension on mb.Position {
+  mb.Point toPoint() {
+    return mb.Point(coordinates: this);
+  }
+}
+
 extension PuckPosition on StyleManager {
   Future<Position> getPuckPosition() async {
     Layer? layer;

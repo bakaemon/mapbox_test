@@ -36,14 +36,17 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
       MbxEdgeInsets(top: 100, left: 100, bottom: 100, right: 100);
   num _duration = 0.0; // in seconds
   num _distance = 0.0; // in meters
+  late SearchBox searchAPI;
   // --->
   String searchValue = '';
   List<String> suggestions = [];
   List<PointAnnotation> stops = [];
+  String _clickedResultMapboxId = '';
 
   @override
   void initState() {
     super.initState();
+    searchAPI = SearchBox(apiKey: mapboxDL);
     LocationUtils.isLocationPermissionGranted().then((isEnable) {
       if (isEnable) {
         setState(() {
@@ -57,6 +60,24 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
         });
       }
     });
+  }
+
+  void addPoint(PointAnnotation anno) {
+    stops.addPoint(
+      anno,
+      onAdded: () async {
+        if (stops.length > 1) {
+          final durationAndDistance = await routeUtil?.drawRoute(
+              stops.map((e) => e.toPosition()).toList(),
+              routeType: RouteType.animated,
+              color: Colors.deepOrangeAccent);
+          setState(() {
+            _distance = durationAndDistance!.last;
+            _duration = durationAndDistance.first;
+          });
+        }
+      },
+    );
   }
 
   PreferredSizeWidget _searchAppBar() => EasySearchBar(
@@ -74,28 +95,36 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
           if (value.isEmpty) {
             return [];
           }
-          final searchAPI =
-              SearchAPI(apiKey: mapboxDL, limit: 5, country: 'vn');
-          final result = await searchAPI.getSuggestions(value);
-          if (result.success != null) {
-            final suggestion = result.success!.suggestions!
-                .map((e) => e!.name ?? 'N/A')
-                .toList();
+
+          final result =
+              await searchAPI.profile<SuggestProfile>().searchSuggestions(
+                    query: value,
+                    country: 'vn',
+                  );
+          if (result.isNotEmpty) {
+            final suggestion = result.map((e) => e.placeFormatted).toList();
             suggestions = suggestion;
             return suggestion;
           } else {
             return ['No result'];
           }
         },
-        onSuggestionTap: (data) async {
-          final suggestionPosition =
-              await LocationUtils.getLatLngFromAddress(data);
+        onSuggestionTap: (_) async {
+          final result = await searchAPI
+              .profile<RetrieveProfile>()
+              .retrieveResult(mapboxId: _clickedResultMapboxId);
+          final suggestionPosition = result.features.first.geometry.coordinates;
+          final anno = await pointAnnotationManager?.addPinAnnotation(
+            Position(suggestionPosition.longitude, suggestionPosition.latitude)
+                .toPoint(),
+          );
+          addPoint(anno!);
           mapboxMap?.flyTo(
             CameraOptions(
               center: Point(
                 coordinates: Position(
-                  suggestionPosition.last,
-                  suggestionPosition.first,
+                  suggestionPosition.longitude,
+                  suggestionPosition.latitude,
                   0,
                 ),
               ).toJson(),
@@ -280,26 +309,9 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
         onMapCreated: _onMapCreated,
         onScrollListener: _onScrollListener,
         onTapListener: (coordinate) async {
-          final anno = await pointAnnotationManager?.create(
-            PointAnnotationOptions(
-              geometry: coordinate.toPoint().toJson(),
-              image: (await rootBundle.load(Assets.images.bus.path))
-                  .buffer
-                  .asUint8List(),
-              iconSize: 1.5,
-            ),
-          );
-          stops.add(anno!);
-          if (stops.length > 1) {
-            final durationAndDistance = await routeUtil?.drawRoute(
-                stops.map((e) => e.toPosition()).toList(),
-                routeType: RouteType.animated,
-                color: Colors.deepOrangeAccent);
-            setState(() {
-              _distance = durationAndDistance!.last;
-              _duration = durationAndDistance.first;
-            });
-          }
+          final anno = await pointAnnotationManager
+              ?.addPinAnnotation(coordinate.toPoint());
+          addPoint(anno!);
         },
       ),
       floatingActionButton: _fab(),

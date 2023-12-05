@@ -4,13 +4,13 @@ part 'place.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class Place {
-  Place({
-    this.id,
-    this.name,
-  });
+  final String id;
+  final String name;
 
-  final String? id;
-  final String? name;
+  Place({
+    required this.id,
+    required this.name,
+  });
 
   factory Place.fromJson(Map<String, dynamic> json) => _$PlaceFromJson(json);
 

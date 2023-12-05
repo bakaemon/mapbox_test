@@ -29,7 +29,7 @@ class RouteUtil {
   Animation<double>? animation;
   AnimationController? controller;
 
-  DrivingAPI drivingAPI = DrivingAPI(apiKey: mapboxDL);
+  Direction directionAPI = Direction(apiKey: mapboxDL);
 
   num duration = 0.0; // in seconds
   num distance = 0.0; // in meters
@@ -150,12 +150,12 @@ class RouteUtil {
   }
 
   Future<List<Position>> _fetchRouteCoordinates(List<Position> stops) async {
-    final route = await drivingAPI
+    final route = await directionAPI
         .profile<DrivingProfile>(
             options: DrivingRouteOptions(
           overview: Overview.full,
         ))
-        .routeCoordinatePolygon(stops);
+        .routeCoordinate(stops);
     debugPrint('route: $route');
     setDurationAndDistance(route);
     final geometries = route['geometry']; // polyline
@@ -167,7 +167,7 @@ class RouteUtil {
 // optimized route
   Future<List<Position>> _fetchOptimizedRouteCoordinate(
       List<Position> stops) async {
-    final trip = await drivingAPI
+    final trip = await directionAPI
         .profile<OptimizationProfile>(
             options: DrivingRouteOptions(
           geometry: GeometryResponseType.geojson,

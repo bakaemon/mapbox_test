@@ -4,11 +4,13 @@ import '../../profile.dart';
 class EndpointProfile implements EndpointProfileInterface {
   EndpointProfile({
     String? apiKey,
-    this.drivingOptions,
+    this.sessionToken,
   })  : assert(apiKey != null || MapBoxPHX.apiKey != null,
             'The API Key must be provided'),
         apiKey = apiKey ?? MapBoxPHX.apiKey!;
 
   final String? apiKey;
-  final DrivingRouteOptions? drivingOptions;
+  final String? sessionToken;
 }
+
+

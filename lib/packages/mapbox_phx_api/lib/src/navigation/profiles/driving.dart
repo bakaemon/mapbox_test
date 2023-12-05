@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:mapbox_phx_api/mapbox_phx_api.dart';
-import 'endpoint_profile.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mapbox;
+
+import 'endpoint_profile.dart';
 
 class DrivingProfile extends EndpointProfile {
   DrivingProfile({
@@ -13,7 +14,7 @@ class DrivingProfile extends EndpointProfile {
   final _baseUri =
       Uri.parse('https://api.mapbox.com/directions/v5/mapbox/driving/');
 
-  Future<Map<String, dynamic>> routeCoordinatePolygon(
+  Future<Map<String, dynamic>> routeCoordinate(
       List<mapbox.Position> stops) async {
     final response = await _directionRoute(stops);
     if (response.statusCode != 200) {

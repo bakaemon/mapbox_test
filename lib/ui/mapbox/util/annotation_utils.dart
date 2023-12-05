@@ -1,5 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
+import 'package:mapbox_test/ui/mapbox/util/location_utils.dart';
+
+import '../../../generated_assets/assets.gen.dart';
 
 extension CircleAnnotationUtils on CircleAnnotation {
   CircleAnnotation copyWith({
@@ -93,5 +96,26 @@ extension PointAnnotationUtils on PointAnnotation {
   Position toPosition() {
     final geometry = this.geometry?['coordinates'] as List<dynamic>;
     return Position(geometry[0], geometry[1]);
+  }
+}
+
+extension AnnotationManagerUtil on PointAnnotationManager {
+  Future<PointAnnotation> addPinAnnotation(Point point) async {
+    return create(
+      PointAnnotationOptions(
+        geometry: point.toJson(),
+        image: (await rootBundle.load(Assets.images.bus.path))
+            .buffer
+            .asUint8List(),
+        iconSize: 1.5,
+      ),
+    );
+  }
+}
+
+extension ListPointAnnotationUtil on List<PointAnnotation> {
+  void addPoint(PointAnnotation point, {VoidCallback? onAdded}) {
+    add(point);
+    onAdded?.call();
   }
 }

@@ -5,6 +5,8 @@ import 'package:mapbox_phx_api/mapbox_phx_api.dart';
 
 import 'endpoint_profile.dart';
 
+
+
 class OptimizationProfile extends EndpointProfile {
   OptimizationProfile({
     super.apiKey,

@@ -1,20 +1,14 @@
 import 'package:json_annotation/json_annotation.dart';
 
-import 'annotation_json.dart';
-import 'location.dart';
+import 'models.dart';
 
 part 'geometry.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class Geometry {
-  Geometry({
-    this.coordinates,
-    this.type,
-  });
+  Coordinate coordinates;
 
-  final String? type;
-  @LocationConverter()
-  final Location? coordinates;
+  Geometry(this.coordinates);
 
   factory Geometry.fromJson(Map<String, dynamic> json) =>
       _$GeometryFromJson(json);
