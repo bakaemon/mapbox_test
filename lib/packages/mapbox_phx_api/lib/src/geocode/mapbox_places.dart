@@ -1,7 +1,8 @@
 //  Uri.parse('https://api.mapbox.com/geocoding/v5/mapbox.places/')
-import 'package:mapbox_geocode/mapbox_geocode.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import '../../mapbox_phx_api.dart';
 
 class MapBoxPlaces extends GeoCoding {
   MapBoxPlaces({

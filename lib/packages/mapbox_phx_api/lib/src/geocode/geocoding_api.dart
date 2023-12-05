@@ -1,6 +1,7 @@
-import 'package:mapbox_geocode/src/geocode/mapbox_places.dart';
 
-import '../../mapbox_geocode.dart';
+
+import '../../mapbox_phx_api.dart';
+import 'mapbox_places.dart';
 
 /// The MapBox Geocoding API lets you convert location text into geographic coordinates (1600 Pennsylvania Ave NW → -77.0366,38.8971)
 /// and vice versa (reverse geocoding).

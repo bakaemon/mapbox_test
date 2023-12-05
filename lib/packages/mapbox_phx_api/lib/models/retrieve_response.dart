@@ -1,6 +1,5 @@
 
 import 'package:json_annotation/json_annotation.dart';
-import 'package:mapbox_geocode/models/location_context/location_context.dart';
 
 import 'annotation_json.dart';
 import 'bbox.dart';

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
-import '../mapbox_geocode.dart';
+import '../mapbox_phx_api.dart';
 import '../models/retrieve_response.dart';
 import '../models/suggestion_response.dart';
 

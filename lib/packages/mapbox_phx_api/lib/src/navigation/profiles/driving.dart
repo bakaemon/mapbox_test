@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:mapbox_geocode/src/navigation/profiles/driving_route_options.dart';
+import 'package:mapbox_phx_api/mapbox_phx_api.dart';
 import 'endpoint_profile.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mapbox;
 

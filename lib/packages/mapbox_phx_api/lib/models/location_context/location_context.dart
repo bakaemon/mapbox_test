@@ -1,9 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
-import 'package:mapbox_geocode/models/location_context/place.dart';
-import 'package:mapbox_geocode/models/location_context/region.dart';
 
 import 'country.dart';
-import 'neighborhood.dart';
 
 part 'location_context.g.dart';
 

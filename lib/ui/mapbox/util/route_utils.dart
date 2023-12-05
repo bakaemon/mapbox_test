@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'package:mapbox_geocode/mapbox_geocode.dart';
+import 'package:mapbox_phx_api/mapbox_phx_api.dart';
 import 'package:mapbox_test/token.dart';
 import 'package:mapbox_test/ui/mapbox/util/location_utils.dart';
 import 'package:turf/polyline.dart';

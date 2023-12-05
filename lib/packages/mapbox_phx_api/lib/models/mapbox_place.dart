@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
-import '../mapbox_geocode.dart';
+import '../mapbox_phx_api.dart';
 import 'annotation_json.dart';
 import 'feature.dart';
 import 'geometry.dart';

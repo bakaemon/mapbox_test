@@ -21,7 +21,7 @@ class _AppState extends State<App> {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MapScreen(),
+      home: const MapScreen(),
     );
   }
 }
