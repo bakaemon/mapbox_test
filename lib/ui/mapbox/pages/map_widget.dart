@@ -11,6 +11,7 @@ import 'package:mapbox_test/ui/mapbox/util/annotation_listener.dart';
 import 'package:mapbox_test/ui/mapbox/util/annotation_utils.dart';
 import 'package:mapbox_test/ui/mapbox/util/route_utils.dart';
 import '../util/location_utils.dart';
+import '../util/unit_utils.dart';
 
 class MapScreenWidget extends StatefulWidget {
   const MapScreenWidget({super.key});
@@ -24,14 +25,18 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
   // ELIGIBLE FOR REUSE
   MapboxMap? mapboxMap;
   bool _userlocationTracking = false;
+  bool _enablePuck = true;
+  bool _pulsingPuck = true;
+  bool _accuracyRing = true;
   Timer? _timer;
   PointAnnotationManager? pointAnnotationManager;
   CircleAnnotationManager? circleAnnotationManager;
   RouteUtil? routeUtil;
   final defaultEdgeInsets =
       MbxEdgeInsets(top: 100, left: 100, bottom: 100, right: 100);
+  num _duration = 0.0; // in seconds
+  num _distance = 0.0; // in meters
   // --->
-  PointAnnotation? _pinnedAnnotation;
   String searchValue = '';
   List<String> suggestions = [];
   List<PointAnnotation> stops = [];
@@ -39,10 +44,25 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
   @override
   void initState() {
     super.initState();
+    LocationUtils.isLocationPermissionGranted().then((isEnable) {
+      if (isEnable) {
+        setState(() {
+          _enablePuck = true;
+          _pulsingPuck = true;
+          _accuracyRing = true;
+        });
+        setState(() {
+          _userlocationTracking = !_userlocationTracking;
+          refreshTrackLocation();
+        });
+      }
+    });
   }
 
   PreferredSizeWidget _searchAppBar() => EasySearchBar(
-        title: const Text('MapScreen'),
+        title:
+            Text('MapScreen (${_distance.toKilometers.toStringAsFixed(1)} km, '
+                '${_duration.toMinutes.toInt()} min)'),
         // search bar on appbar
 
         onSearch: (value) async {
@@ -89,48 +109,6 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
         },
       );
 
-  void _onMapCreated(MapboxMap mapboxMap) async {
-    this.mapboxMap = mapboxMap;
-    routeUtil = RouteUtil.of(this);
-    // set camera position and zoom
-    mapboxMap.setCamera(CameraOptions(
-      center: Point(
-        coordinates: Position(
-          105.8342,
-          21.0278,
-        ),
-      ).toJson(),
-      zoom: 12,
-    ));
-    // add symbol layer
-    await mapboxMap.location.updateSettings(
-      LocationComponentSettings(
-        enabled: true,
-        pulsingEnabled: false,
-        showAccuracyRing: true,
-        // puckBearingEnabled: true,
-      ),
-    );
-
-    // add point annotation
-    pointAnnotationManager =
-        await mapboxMap.annotations.createPointAnnotationManager();
-    circleAnnotationManager =
-        await mapboxMap.annotations.createCircleAnnotationManager();
-    circleAnnotationManager?.addOnCircleAnnotationClickListener(
-      // CircleAnnotationListener((annotation) {
-      //   debugPrint('onCircleAnnotationClick: ${annotation.id}');
-      //   circleAnnotationManager?.delete(annotation);
-      //   _pinnedAnnotation = null;
-      // }),
-      DeleteCircleAnnotationListener(circleAnnotationManager!, onDeleted: (_) {
-        setState(() {
-          _pinnedAnnotation = null;
-        });
-      }),
-    );
-  }
-
   void refreshTrackLocation() async {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) async {
@@ -154,7 +132,7 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
           ).toJson(),
           zoom: 15,
         ),
-        // animate the camera to the new position over a dynamic distance
+        // // animate the camera to the new position over a dynamic distance
         // MapAnimationOptions(
         //   duration: 500,
         // ),
@@ -188,6 +166,12 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
                       Navigator.of(context).pop();
                       LocationUtils.requestLocationService().then((value) {
                         if (value) {
+                          setState(() {
+                            _enablePuck = true;
+                            _pulsingPuck = true;
+                            _accuracyRing = true;
+                          });
+                          setDefaultLayer();
                           setState(() {
                             _userlocationTracking = !_userlocationTracking;
                             refreshTrackLocation();
@@ -224,6 +208,66 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
         ),
       );
 
+  void setDefaultCamera() {
+    mapboxMap?.setCamera(CameraOptions(
+      center: Point(
+        coordinates: Position(
+          105.8342,
+          21.0278,
+        ),
+      ).toJson(),
+      zoom: 12,
+    ));
+  }
+
+  void setDefaultLayer() async {
+    await mapboxMap?.location.updateSettings(
+      LocationComponentSettings(
+        enabled: _enablePuck,
+        pulsingEnabled: _pulsingPuck,
+        pulsingColor: Colors.orange.shade500.withOpacity(0.5).value,
+        accuracyRingColor: Colors.orange.shade100.withOpacity(0.5).value,
+        showAccuracyRing: _accuracyRing,
+        locationPuck: LocationPuck(
+          locationPuck2D: LocationPuck2D(
+            topImage: (await rootBundle.load(Assets.images.bus.path))
+                .buffer
+                .asUint8List(),
+          ),
+        ),
+        // puckBearingEnabled: true,
+      ),
+    );
+  }
+
+  void setAnnotationManager() async {
+    pointAnnotationManager =
+        await mapboxMap?.annotations.createPointAnnotationManager();
+    circleAnnotationManager =
+        await mapboxMap?.annotations.createCircleAnnotationManager();
+  }
+
+  void setAnnotationListeners() async {
+    pointAnnotationManager?.addOnPointAnnotationClickListener(
+      DeletePointAnnotationListener(pointAnnotationManager!, onDeleted: (_) {
+        setState(() {});
+      }),
+    );
+  }
+
+  void _onMapCreated(MapboxMap mapboxMap) async {
+    this.mapboxMap = mapboxMap;
+    routeUtil = RouteUtil.of(this);
+    // set camera position and zoom
+    setDefaultCamera();
+    // add symbol layer
+    setDefaultLayer();
+    // set annotation managers
+    setAnnotationManager();
+    // set annotation listeners
+    setAnnotationListeners();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -247,14 +291,18 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
           );
           stops.add(anno!);
           if (stops.length > 1) {
-            routeUtil?.drawRouteFromStops(
-              stops.map((e) => e.toPosition()).toList(),
-            );
+            final durationAndDistance = await routeUtil?.drawRoute(
+                stops.map((e) => e.toPosition()).toList(),
+                routeType: RouteType.animated,
+                color: Colors.deepOrangeAccent);
+            setState(() {
+              _distance = durationAndDistance!.last;
+              _duration = durationAndDistance.first;
+            });
           }
         },
       ),
       floatingActionButton: _fab(),
     );
   }
-
 }

@@ -109,6 +109,7 @@ extension GeolocatorPositionExtension on geolocator.Position {
   mb.Position toMapBoxPosition() {
     return mb.Position(latitude, longitude);
   }
+  
 }
 
 extension PuckPosition on StyleManager {
