@@ -14,7 +14,16 @@ import '../util/location_utils.dart';
 import '../util/unit_utils.dart';
 
 class MapScreenWidget extends StatefulWidget {
-  const MapScreenWidget({super.key});
+  const MapScreenWidget({
+    super.key,
+    this.address = const [],
+    this.streamBusLocation,
+    this.focusAddress,
+  });
+
+  final List<String> address;
+  final Stream<Position>? streamBusLocation;
+  final String? focusAddress;
 
   @override
   State<MapScreenWidget> createState() => _MapScreenWidgetState();
@@ -37,11 +46,13 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
   num _duration = 0.0; // in seconds
   num _distance = 0.0; // in meters
   late SearchBox searchAPI;
+  bool _isFetchingStops = false;
+  PointAnnotation? busAnnotation;
+  List<Position> busTrail = [];
   // --->
   String searchValue = '';
-  List<String> suggestions = [];
+  List<Suggestion> suggestions = [];
   List<PointAnnotation> stops = [];
-  String _clickedResultMapboxId = '';
 
   @override
   void initState() {
@@ -54,27 +65,75 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
           _pulsingPuck = true;
           _accuracyRing = true;
         });
-        setState(() {
-          _userlocationTracking = !_userlocationTracking;
-          refreshTrackLocation();
-        });
       }
     });
   }
 
-  void addPoint(PointAnnotation anno) {
-    stops.addPoint(
-      anno,
-      onAdded: () async {
-        if (stops.length > 1) {
-          final durationAndDistance = await routeUtil?.drawRoute(
-              stops.map((e) => e.toPosition()).toList(),
-              routeType: RouteType.animated,
-              color: Colors.deepOrangeAccent);
-          setState(() {
-            _distance = durationAndDistance!.last;
-            _duration = durationAndDistance.first;
-          });
+  Future<void> _loadStopsFromAddresses({
+    int tryCount = 0,
+  }) async {
+    _isFetchingStops = true;
+
+    try {
+      if (tryCount > 10) {
+        throw Exception(
+            'Geocoding requests exceeded > 10. Check your internet connection.');
+      }
+      if (widget.address.isEmpty) {
+        _isFetchingStops = false;
+        return;
+      }
+      for (final address in widget.address) {
+        final result = await LocationUtils.getAddressMapboxPosition(address);
+
+        addPoint(result.toPoint());
+      }
+      _isFetchingStops = false;
+      return;
+    } catch (e) {
+      _isFetchingStops = false;
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(e.toString()),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK')),
+          ],
+        ),
+      );
+      return _loadStopsFromAddresses(tryCount: tryCount + 1);
+    }
+  }
+
+  Future<PointAnnotation?> addPoint(Point point, {bool asStop = true}) async {
+    return pointAnnotationManager
+        ?.addPinAnnotation(
+      point,
+    )
+        .then(
+      (anno) {
+        if (asStop) {
+          stops.addPoint(
+            anno,
+            onAdded: () async {
+              if (stops.length > 1) {
+                final durationAndDistance = await routeUtil?.optimize(
+                  stops.map((e) => e.toPosition()).toList(),
+                  // routeType: RouteType.animated,
+                  // color: Colors.deepOrangeAccent,
+                );
+                setState(() {
+                  _distance = durationAndDistance!.last;
+                  _duration = durationAndDistance.first;
+                });
+              }
+            },
+          );
         }
       },
     );
@@ -102,29 +161,34 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
                     country: 'vn',
                   );
           if (result.isNotEmpty) {
+            setState(() {
+              suggestions = result;
+            });
             final suggestion = result.map((e) => e.placeFormatted).toList();
-            suggestions = suggestion;
             return suggestion;
           } else {
             return ['No result'];
           }
         },
-        onSuggestionTap: (_) async {
+        onSuggestionTap: (placeFormatted) async {
           final result = await searchAPI
               .profile<RetrieveProfile>()
-              .retrieveResult(mapboxId: _clickedResultMapboxId);
+              .retrieveResult(
+                  mapboxId: suggestions
+                      .where((e) => e.placeFormatted == placeFormatted)
+                      .first
+                      .mapboxId);
           final suggestionPosition = result.features.first.geometry.coordinates;
-          final anno = await pointAnnotationManager?.addPinAnnotation(
-            Position(suggestionPosition.longitude, suggestionPosition.latitude)
+          addPoint(
+            Position(suggestionPosition.first, suggestionPosition.last)
                 .toPoint(),
           );
-          addPoint(anno!);
           mapboxMap?.flyTo(
             CameraOptions(
               center: Point(
                 coordinates: Position(
-                  suggestionPosition.longitude,
-                  suggestionPosition.latitude,
+                  suggestionPosition.first,
+                  suggestionPosition.last,
                   0,
                 ),
               ).toJson(),
@@ -138,22 +202,29 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
         },
       );
 
-  void refreshTrackLocation() async {
+  void followPosition(Future<Position> Function()? positionGetter) async {
     _timer?.cancel();
+    if (_isFetchingStops || busAnnotation == null) {
+      return;
+    }
     _timer = Timer.periodic(const Duration(milliseconds: 1000), (timer) async {
       if (!_userlocationTracking) {
         _timer?.cancel();
         return;
       }
 
-      final Position puckLocation = await mapboxMap!.style.getPuckPosition();
+      // final Position puckLocation = await mapboxMap!.style.getPuckPosition();
+      // final Position puckLocation = busAnnotation!.toPosition();
 
       // Some function that changes the camera of the map.
-      _setCameraPosition(puckLocation);
+      _setCameraPosition(await positionGetter?.call());
     });
   }
 
-  void _setCameraPosition(Position puckLocation) {
+  void _setCameraPosition(Position? puckLocation) {
+    if (puckLocation == null) {
+      return;
+    }
     mapboxMap?.flyTo(
         CameraOptions(
           center: Point(
@@ -193,7 +264,8 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
                 TextButton(
                     onPressed: () {
                       Navigator.of(context).pop();
-                      LocationUtils.requestLocationService().then((value) {
+                      LocationUtils.requestLocationService()
+                          .then((value) async {
                         if (value) {
                           setState(() {
                             _enablePuck = true;
@@ -203,7 +275,7 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
                           setDefaultLayer();
                           setState(() {
                             _userlocationTracking = !_userlocationTracking;
-                            refreshTrackLocation();
+                            followPosition(mapboxMap?.style.getPuckPosition);
                           });
                         }
                       });
@@ -216,7 +288,9 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
   void _beginTracking() {
     setState(() {
       _userlocationTracking = !_userlocationTracking;
-      refreshTrackLocation();
+      followPosition(() async {
+        return Future.value(busAnnotation?.toPosition());
+      });
     });
   }
 
@@ -240,10 +314,12 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
   void setDefaultCamera() {
     mapboxMap?.setCamera(CameraOptions(
       center: Point(
-        coordinates: Position(
-          105.8342,
-          21.0278,
-        ),
+        coordinates: stops.isEmpty
+            ? Position(
+                105.8342,
+                21.0278,
+              )
+            : stops.first.toPosition(),
       ).toJson(),
       zoom: 12,
     ));
@@ -287,14 +363,48 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
   void _onMapCreated(MapboxMap mapboxMap) async {
     this.mapboxMap = mapboxMap;
     routeUtil = RouteUtil.of(this);
-    // set camera position and zoom
-    setDefaultCamera();
+
     // add symbol layer
     setDefaultLayer();
     // set annotation managers
     setAnnotationManager();
     // set annotation listeners
     setAnnotationListeners();
+    // load stops
+    await _loadStopsFromAddresses();
+
+    // set camera position and zoom
+    setDefaultCamera();
+
+    if (widget.focusAddress != null) {
+      LocationUtils.getAddressMapboxPosition(widget.focusAddress!)
+          .then((position) {
+        if (!widget.address.contains(widget.focusAddress)) {
+          addPoint(position.toPoint(), asStop: false);
+        }
+        _setCameraPosition(position);
+      });
+    }
+
+    widget.streamBusLocation?.listen(_updateBusLocation);
+  }
+
+  Future<void> _updateBusLocation(Position position) async {
+    if (busAnnotation == null) {
+      busAnnotation = await pointAnnotationManager?.addPinAnnotation(
+        position.toPoint(),
+      );
+      // start direction
+      pointAnnotationManager?.addAnnotation(
+          point: position.toPoint(), image: Assets.images.bus.path);
+    } else {
+      busAnnotation = busAnnotation!.copyWith(
+        geometry: position.toPoint().toJson(),
+      );
+      await pointAnnotationManager?.update(busAnnotation!);
+      busTrail.add(busAnnotation!.toPosition());
+      routeUtil?.drawTrail(busTrail);
+    }
   }
 
   @override
@@ -309,9 +419,7 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
         onMapCreated: _onMapCreated,
         onScrollListener: _onScrollListener,
         onTapListener: (coordinate) async {
-          final anno = await pointAnnotationManager
-              ?.addPinAnnotation(coordinate.toPoint());
-          addPoint(anno!);
+          addPoint(coordinate.toPoint());
         },
       ),
       floatingActionButton: _fab(),

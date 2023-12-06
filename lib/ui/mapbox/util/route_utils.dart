@@ -57,6 +57,18 @@ class RouteUtil {
     return [duration, distance];
   }
 
+  /// Draw a custom trail role from coordinates [Position] objects.
+  Future<void> drawTrail(
+    List<Position> coordinates, {
+    Color? color,
+  }) {
+    return _drawRoute(
+      coordinates,
+      routeType: RouteType.line,
+      color: color,
+    );
+  }
+
   Future<void> _drawRoute(List<Position> polyline,
       {RouteType routeType = RouteType.line, Color? color}) async {
     switch (routeType) {
@@ -144,7 +156,7 @@ class RouteUtil {
     });
   }
 
-  Future<List<num>> drawRouteFromStops(List<Position> stops) async {
+  Future<List<num>> optimize(List<Position> stops) async {
     _drawRoute(await _fetchOptimizedRouteCoordinate(stops));
     return [duration, distance];
   }

@@ -102,14 +102,10 @@ class LocationUtils {
 }
 
 extension GeolocatorPositionExtension on geolocator.Position {
-  mb.Position toMapBoxPluck() {
+  mb.Position toMapBoxPosition() {
     return mb.Position(longitude, latitude, altitude);
   }
 
-  mb.Position toMapBoxPosition() {
-    return mb.Position(latitude, longitude);
-  }
-  
 }
 
 extension MapBoxPositionExtension on mb.Position {
@@ -135,6 +131,7 @@ extension ScreenCoordinateExtension on mb.ScreenCoordinate {
   mb.Point toPoint() {
     return mb.Point(coordinates: Position(y, x));
   }
+
   mb.Position toPosition() {
     return mb.Position(y, x);
   }
@@ -142,28 +139,6 @@ extension ScreenCoordinateExtension on mb.ScreenCoordinate {
 
 extension LocationGeolocatorUtil on Location {
   mb.Position toMapBoxPosition() {
-    return mb.Position(latitude, longitude);
+    return mb.Position(longitude, latitude);
   }
 }
-// extension LatLngExtension on LatLng {
-//   double distanceTo(LatLng other) {
-//     return Geolocator.distanceBetween(
-//       latitude,
-//       longitude,
-//       other.latitude,
-//       other.longitude,
-//     );
-//   }
-
-//   bool isAt(
-//     LatLng other,
-//   ) {
-//     return latitude == other.latitude && longitude == other.longitude;
-//   }
-// }
-
-// extension PositionExtension on Position {
-//   LatLng toLatLng() {
-//     return LatLng(latitude, longitude);
-//   }
-// }

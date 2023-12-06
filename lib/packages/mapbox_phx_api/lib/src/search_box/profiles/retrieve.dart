@@ -20,6 +20,7 @@ class RetrieveProfile extends EndpointProfile {
       path: _baseUri.path + mapboxId,
       queryParameters: {
         'access_token': apiKey!,
+        'session_token': sessionToken,
       },
     );
     final response = await http.get(uri);

@@ -6,7 +6,7 @@ part 'geometry.g.dart';
 
 @JsonSerializable(explicitToJson: true)
 class Geometry {
-  Coordinate coordinates;
+  List<num> coordinates;
 
   Geometry(this.coordinates);
 

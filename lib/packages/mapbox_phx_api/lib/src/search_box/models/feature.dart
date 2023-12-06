@@ -7,10 +7,10 @@ part 'feature.g.dart';
 class FeatureCollection {
   String type;
   List<Feature> features;
-  String attribution;
-  String url;
+  String? attribution;
+  String? url;
 
-  FeatureCollection(this.type, this.features, this.attribution, this.url);
+  FeatureCollection({required this.type, required this.features, this.attribution, this.url});
 
   factory FeatureCollection.fromJson(Map<String, dynamic> json) =>
       _$FeatureCollectionFromJson(json);
@@ -22,9 +22,9 @@ class FeatureCollection {
 class Feature {
   String type;
   Geometry geometry;
-  Properties properties;
+  Properties? properties;
 
-  Feature(this.type, this.geometry, this.properties);
+  Feature({required this.type, required this.geometry, this.properties});
 
   factory Feature.fromJson(Map<String, dynamic> json) =>
       _$FeatureFromJson(json);

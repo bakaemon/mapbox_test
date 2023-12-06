@@ -31,10 +31,12 @@ class SearchBox implements EndpointAPI {
       case SuggestProfile:
         return SuggestProfile(
           apiKey: _apiKey,
+          sessionToken: sessionToken,
         ) as T;
       case RetrieveProfile:
         return RetrieveProfile(
           apiKey: _apiKey,
+          sessionToken: sessionToken,
         ) as T;
       default:
         throw Exception('Invalid profile type');

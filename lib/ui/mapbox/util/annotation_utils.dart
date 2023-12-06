@@ -111,6 +111,21 @@ extension AnnotationManagerUtil on PointAnnotationManager {
       ),
     );
   }
+
+  Future<PointAnnotation> addAnnotation({
+    required Point point,
+    String? image,
+  }) async {
+    return create(
+      PointAnnotationOptions(
+        geometry: point.toJson(),
+        image: image != null
+            ? (await rootBundle.load(image)).buffer.asUint8List()
+            : null,
+        iconSize: 1.5,
+      ),
+    );
+  }
 }
 
 extension ListPointAnnotationUtil on List<PointAnnotation> {
