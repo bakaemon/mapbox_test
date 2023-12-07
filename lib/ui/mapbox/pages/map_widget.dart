@@ -19,11 +19,13 @@ class MapScreenWidget extends StatefulWidget {
     this.address = const [],
     this.streamBusLocation,
     this.focusAddress,
+    this.enableTrail = false,
   });
 
   final List<String> address;
   final Stream<Position>? streamBusLocation;
   final String? focusAddress;
+  final bool enableTrail;
 
   @override
   State<MapScreenWidget> createState() => _MapScreenWidgetState();
@@ -395,15 +397,19 @@ class _MapScreenWidgetState extends State<MapScreenWidget>
         position.toPoint(),
       );
       // start direction
-      pointAnnotationManager?.addAnnotation(
-          point: position.toPoint(), image: Assets.images.bus.path);
+      if (widget.enableTrail) {
+        pointAnnotationManager?.addAnnotation(
+            point: position.toPoint(), image: Assets.images.bus.path);
+      }
     } else {
       busAnnotation = busAnnotation!.copyWith(
         geometry: position.toPoint().toJson(),
       );
       await pointAnnotationManager?.update(busAnnotation!);
-      busTrail.add(busAnnotation!.toPosition());
-      routeUtil?.drawTrail(busTrail);
+      if (widget.enableTrail) {
+        busTrail.add(busAnnotation!.toPosition()); // to update bus trail
+        routeUtil?.drawTrail(busTrail);
+      }
     }
   }
 

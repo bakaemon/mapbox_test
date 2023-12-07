@@ -22,21 +22,21 @@ class _MapScreenState extends State<MapScreen> {
     return BlocProvider<MapboxBloc>(
       create: (context) => MapboxBloc(),
       child: MapScreenWidget(
-          address: const [
-            '165 Cầu Cốc - Tây Mỗ - Nam Từ Liêm, Hà Nội',
-            '89 Lê Đức Thọ, Mỹ Đình 2, Nam Từ Liêm, Hà Nội',
-            '66 Nguyễn Hoàng, Mỹ Đình, Nam Từ Liêm, Hà Nội',
-          ],
-          focusAddress: '66 Nguyễn Hoàng, Mỹ Đình, Nam Từ Liêm, Hà Nội',
-          streamBusLocation: () {
-            return Stream.periodic(
-              const Duration(milliseconds: 1000),
-              (i) => Position(
-                105.834160 + i * 0.00001,
-                21.027763 + i * 0.000001,
-              ),
-            );
-          }()),
+        address: const [
+          '165 Cầu Cốc - Tây Mỗ - Nam Từ Liêm, Hà Nội',
+          '89 Lê Đức Thọ, Mỹ Đình 2, Nam Từ Liêm, Hà Nội',
+          '66 Nguyễn Hoàng, Mỹ Đình, Nam Từ Liêm, Hà Nội',
+        ],
+        focusAddress: '66 Nguyễn Hoàng, Mỹ Đình, Nam Từ Liêm, Hà Nội',
+        enableTrail: true,
+        streamBusLocation: Stream.periodic(
+          const Duration(milliseconds: 1000),
+          (i) => Position(
+            105.834160 + i * 0.00001,
+            21.027763 + i * 0.000001,
+          ),
+        ),
+      ),
       // child: FlutterMapWidget(),
     );
   }

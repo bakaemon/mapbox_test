@@ -1,6 +1,5 @@
 import 'package:flutter/services.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
-import 'package:mapbox_test/ui/mapbox/util/location_utils.dart';
 
 import '../../../generated_assets/assets.gen.dart';
 
